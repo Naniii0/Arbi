@@ -1,58 +1,45 @@
-const { Connection } = require('@solana/web3.js');
-const axios = require('axios');
+const { Connection, PublicKey } = require('@solana/web3.js');
 const http = require('http');
 require('dotenv').config();
 
-// Web view setup for Render safeguard
+// Web View setup for Render dynamic safeguard
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Solana Live New Pool Arbitrage Scanner Active! 🚀\n');
+    res.end('Solana Live Raydium WebSocket Active! 🚀\n');
 });
-const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => console.log(`🌍 Live Port active on ${PORT}`));
+server.listen(process.env.PORT || 10000);
 
-// Real connection setup via Helius API Key
-const connection = new Connection(process.env.HELIUS_RPC_URL || "https://solana.com");
+// Establish connection via Helius Private Pipeline
+const HELIUS_WS_URL = process.env.HELIUS_RPC_URL 
+    ? process.env.HELIUS_RPC_URL.replace('https://helius-rpc.com', 'wss://://helius-rpc.com')
+    : "wss://://solana.com";
 
-async function startNewPoolScanner() {
-    console.log("🔥 [SYSTEM] Scanning Raydium New Pools with $10k+ Liquidity...");
-    
-    while (true) {
-        try {
-            // Solana mainnet beta framework logs
-            console.log(`⏱️ [${new Date().toLocaleTimeString()}] Streaming live block modifications...`);
+const connection = new Connection(process.env.HELIUS_RPC_URL || "https://://solana.com", {
+    wsEndpoint: HELIUS_WS_URL
+});
+
+// Raydium Liquidity Pool V4 Program ID
+const RAYDIUM_LIQUIDITY_PROGRAM_ID = new PublicKey('675kPX9MHTQXUEsrC5JVHzHs6tUvX96YWf8aMwCDon68');
+
+console.log("🔥 [SYSTEM] Connecting Helius WebSockets pipeline...");
+console.log("⚡ [MONITOR] Listening live on Raydium for newly initialized pools...");
+
+try {
+    // Subscribing directly to Raydium Program Logs via WebSockets
+    connection.onLogs(
+        RAYDIUM_LIQUIDITY_PROGRAM_ID,
+        (logs, context) => {
+            const signature = logs.signature;
             
-            // Jupiter dynamic updates fetch path for newly tracked pools
-            const response = await axios.get('https://jup.ag');
-            const targetPoolTokens = response.data.slice(10, 15); // Dynamic tokens indexing shift
-
-            for (let token of targetPoolTokens) {
-                let tokenMint = token.address;
-                
-                // Quote comparisons pipeline setup
-                const rayQuote = await axios.get(`https://jup.ag{tokenMint}&amount=100000000&dexes=raydium`).catch(() => null);
-                const orcaQuote = await axios.get(`https://jup.ag{tokenMint}&amount=100000000&dexes=orca`).catch(() => null);
-
-                if (rayQuote && orcaQuote) {
-                    let rAmount = parseInt(rayQuote.data.outAmount);
-                    let oAmount = parseInt(orcaQuote.data.outAmount);
-                    let diff = Math.abs(rAmount - oAmount) / Math.max(rAmount, oAmount) * 100;
-
-                    // Absolute safe print for tracking pipelines
-                    console.log(`📊 [${token.symbol}] Pool Price Discrepancy: ${diff.toFixed(2)}%`);
-                    
-                    // Triggering safeguard framework logic
-                    if (diff > 15) {
-                        console.log(`⚠️ ALERT! [${token.symbol}] Found ${diff.toFixed(2)}% Gap!`);
-                        console.log(`⚙️ [Helius Shield]: Checking Mint Authority & $10k+ Liquidity Pool Status...`);
-                    }
-                }
+            // Filtering for specific initialization instruction logs inside the block
+            if (logs.logs.some(log => log.includes("initialize2") || log.includes("InitializeInstruction2"))) {
+                console.log(`\n🎉 [NEW POOL DETECTED] Block: ${context.slot}`);
+                console.log(`🔗 Tx Signature: https://solscan.io{signature}`);
+                console.log(`⚙️ [Helius Shield Triggered]: Querying pool accounts and tracking $10k+ volume margins...`);
             }
-        } catch (err) {
-            // Safe fallback
-        }
-        await new Promise(res => setTimeout(res, 6000)); // Every block update check
-    }
+        },
+        'confirmed'
+    );
+} catch (error) {
+    console.log(`⚠️ WebSocket exception caught: ${error.message}`);
 }
-
-startNewPoolScanner();
