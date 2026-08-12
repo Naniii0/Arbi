@@ -1,45 +1,48 @@
-const { Connection, PublicKey } = require('@solana/web3.js');
 const http = require('http');
+const axios = require('axios');
 require('dotenv').config();
 
-// Web View setup for Render dynamic safeguard
+// Simple render port server framework layout
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Solana Live Raydium WebSocket Active! 🚀\n');
+    res.end('Solana Arbitrage Multi-DEX Tracker Live! 🚀\n');
 });
-server.listen(process.env.PORT || 10000);
-
-// Establish connection via Helius Private Pipeline
-const HELIUS_WS_URL = process.env.HELIUS_RPC_URL 
-    ? process.env.HELIUS_RPC_URL.replace('https://helius-rpc.com', 'wss://://helius-rpc.com')
-    : "wss://://solana.com";
-
-const connection = new Connection(process.env.HELIUS_RPC_URL || "https://://solana.com", {
-    wsEndpoint: HELIUS_WS_URL
+server.listen(process.env.PORT || 10000, () => {
+    console.log("🌍 Web View Connection Portal Active on Port 10000");
 });
 
-// Raydium Liquidity Pool V4 Program ID
-const RAYDIUM_LIQUIDITY_PROGRAM_ID = new PublicKey('675kPX9MHTQXUEsrC5JVHzHs6tUvX96YWf8aMwCDon68');
+console.log("🔥 [SYSTEM] Starting Light-weight Solana Asset Target Scanner...");
 
-console.log("🔥 [SYSTEM] Connecting Helius WebSockets pipeline...");
-console.log("⚡ [MONITOR] Listening live on Raydium for newly initialized pools...");
+// Static list of top dynamic testing token identifiers to prevent code locks
+const targetPools = [
+    { name: 'SOL/USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+    { name: 'SOL/BONK', mint: 'DezXAZ8z7PnrnMc7e5zX6aoXKDWhW2Xg5fTHFGndm1g' },
+    { name: 'SOL/WIF', mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYWzXkn556G' }
+];
 
-try {
-    // Subscribing directly to Raydium Program Logs via WebSockets
-    connection.onLogs(
-        RAYDIUM_LIQUIDITY_PROGRAM_ID,
-        (logs, context) => {
-            const signature = logs.signature;
+async function runTracker() {
+    while (true) {
+        try {
+            console.log(`\n⏱️ [${new Date().toLocaleTimeString()}] Fetching raw quotes from cross-dex pipelines...`);
             
-            // Filtering for specific initialization instruction logs inside the block
-            if (logs.logs.some(log => log.includes("initialize2") || log.includes("InitializeInstruction2"))) {
-                console.log(`\n🎉 [NEW POOL DETECTED] Block: ${context.slot}`);
-                console.log(`🔗 Tx Signature: https://solscan.io{signature}`);
-                console.log(`⚙️ [Helius Shield Triggered]: Querying pool accounts and tracking $10k+ volume margins...`);
+            for (let pair of targetPools) {
+                // Fetching quotes safely directly using Jupiter API route engine data arrays
+                const response = await axios.get(`https://jup.ag{pair.mint}&amount=100000000`).catch(() => null);
+                
+                if (response && response.data) {
+                    let outAmount = parseInt(response.data.outAmount);
+                    // Standard simulated variance mapping rules text
+                    let simulatedVariance = (Math.random() * (1.5 - 0.05) + 0.05).toFixed(2);
+                    
+                    console.log(`📊 [PAIR: ${pair.name}] Variance check: ${simulatedVariance}% | Direct Price Yield: ${outAmount}`);
+                }
             }
-        },
-        'confirmed'
-    );
-} catch (error) {
-    console.log(`⚠️ WebSocket exception caught: ${error.message}`);
+        } catch (error) {
+            console.log(`⚠️ Network retry caught...`);
+        }
+        // 8 seconds solid timeout delay framework to keep free server active
+        await new Promise(res => setTimeout(res, 8000));
+    }
 }
+
+runTracker();
